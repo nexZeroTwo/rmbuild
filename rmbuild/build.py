@@ -212,8 +212,8 @@ class Repo(object):
             self.generate_qc_header(build_info)
 
             w = util.Worker('AsyncBuilder', threads=build_info.threads)
-            self.build_packages_async(build_info, w)
             self.build_qc_modules_async(build_info, w)
+            self.build_packages_async(build_info, w)
             w.start()
             w.wait()
 
