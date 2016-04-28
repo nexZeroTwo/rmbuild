@@ -10,15 +10,21 @@ repo_path = '.'
 
 
 def apply(fpath):
-    cfg = {}
+    def get_repo(path):
+        return build.Repo(path)
+
+    cfg = {
+        'util': util,
+        'get_repo': get_repo,
+    }
 
     with open(str(fpath)) as f:
         code = compile(f.read(), fpath, 'exec')
         exec(code, cfg, cfg)
 
-    if 'repo' in cfg:
+    if 'repo_path' in cfg:
         global repo_path
-        repo_path = cfg['repo']
+        repo_path = cfg['repo_path']
 
     for param in tuple(inspect.signature(build.BuildInfo).parameters.keys())[2:]:
         if param in cfg:

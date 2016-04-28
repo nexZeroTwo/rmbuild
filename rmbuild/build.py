@@ -48,7 +48,7 @@ class BuildInfo(object):
         self.version = repo.rm_version
 
         if cache_dir is not None:
-            self.cache_dir = util.make_directory(cache_dir)
+            self.cache_dir = util.make_directory(cache_dir).resolve()
         else:
             self.cache_dir = None
 
@@ -57,7 +57,7 @@ class BuildInfo(object):
         if output_dir is None:
             output_dir = self.temp_dir / 'build'
 
-        self.output_dir = util.make_directory(output_dir)
+        self.output_dir = util.make_directory(output_dir).resolve()
 
         if qcc_flags is None:
             qcc_flags = []
