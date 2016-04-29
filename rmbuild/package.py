@@ -165,6 +165,11 @@ class Package(object):
         pk3.close()
         self.log.info("Done")
 
+        build_info.call_hook('post_build_pk3',
+            package=self,
+            pk3_path=build_info.output_dir / self.output_file_name
+        )
+
         if use_cache:
             self.log.info('Caching for reuse (%r)', str(cached_pkg))
             util.copy(build_info.output_dir / self.output_file_name, cached_pkg)
