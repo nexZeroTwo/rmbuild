@@ -11,7 +11,7 @@ class PathError(RMBuildError):
     def __init__(self, path, message="Unusable path"):
         self.path = path
         self.message = message
-        super().__init__("%s: %r" % (message, path))
+        super().__init__("%s: %r" % (message, str(path)))
 
 
 class PackageError(RMBuildError):

@@ -40,7 +40,7 @@ def directory(path):
 def file(path):
     p = pathlib.Path(path)
     if not p.is_file():
-        raise PathError(p, "Not a regular file")
+        raise PathError(p, "Not a file")
     return p
 
 
