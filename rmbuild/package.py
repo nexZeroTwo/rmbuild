@@ -161,6 +161,7 @@ class Package(object):
                 pk3.write(str(fpath), rpath)
 
         self._add_metafile(build_info, pk3)
+        pk3.close()
         self.log.info("Done")
 
         if use_cache:
