@@ -4,34 +4,28 @@ import inspect
 from . import build
 from . import util
 
+log = util.logger(__name__)
+
 build_args = {}
 install_options = {}
-repo_path = '.'
 
 
-def apply(fpath):
-    def get_repo(path):
-        return build.Repo(path)
-
+def apply(fpath, repo):
     cfg = {
         'util': util,
-        'get_repo': get_repo,
+        'repo': repo
     }
 
-    with open(str(fpath)) as f:
+    fpath = str(fpath)
+    log.info('Using configuration file %r', fpath)
+
+    with open(fpath) as f:
         code = compile(f.read(), fpath, 'exec')
         exec(code, cfg, cfg)
-
-    if 'repo_path' in cfg:
-        global repo_path
-        repo_path = cfg['repo_path']
 
     for param in tuple(inspect.signature(build.BuildInfo).parameters.keys())[2:]:
         if param in cfg:
             build_args[param] = cfg[param]
-
-    if 'git_cmd' in cfg:
-        util.GIT_EXECUTABLE = cfg.git_cmd
 
     install_options.update({
         'dirs': cfg.get('install_dirs', []),
