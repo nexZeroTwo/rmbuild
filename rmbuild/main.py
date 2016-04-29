@@ -93,12 +93,17 @@ def main(argv, defaults_overrides=None):
     with util.in_dir(args.path.resolve()):
         repo = build.Repo(args.path)
         config.apply(args.config, repo)
+
         if args.rebuild:
             config.build_args['force_rebuild'] = True
+
         binfo = repo.build(**config.build_args)
+        config.call_hook('post_build', binfo)
 
         for path in config.install_options['dirs']:
             install.install(binfo, path, link=False)
 
         for path in config.install_options['linkdirs']:
             install.install(binfo, path, link=True)
+
+        config.call_hook('post_install', binfo)
