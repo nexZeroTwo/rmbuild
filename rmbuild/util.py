@@ -233,3 +233,15 @@ def suppress_logged(log, *ex):
         yield
     except ex:
         log.exception("Suppressed exception")
+
+
+def path(*p):
+    return pathlib.Path(p[0]).joinpath(*p[1:])
+
+
+def expand(path):
+    return os.path.expandvars(os.path.expanduser(str(path)))
+
+
+def pexpand(path):
+    return pathlib.Path(expand(path))

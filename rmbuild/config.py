@@ -13,7 +13,7 @@ install_options = {}
 def apply(fpath, repo):
     cfg = {
         'util': util,
-        'repo': repo
+        'repo': repo,
     }
 
     fpath = str(fpath)
