@@ -29,7 +29,11 @@ class BuildInfo(object):
                     cache_qc=True,
                     cache_pkg=True,
                     force_rebuild=False,
+                    hooks=None,
                 ):
+
+        if hooks is None:
+            hooks = {}
 
         self.__dict__.update(locals())
 
@@ -146,6 +150,13 @@ class BuildInfo(object):
             pkg.name.startswith('o_')
         )) or pkg.name in self.extra_packages
 
+    def call_hook(self, hook, *args, **kwargs):
+        if hook not in self.hooks:
+            return
+
+        log.debug('Calling hook %r (args=%r, kwargs=%r)', hook, args, kwargs)
+        return self.hooks[hook](*args, log=util.logger(__name__, 'hook', hook), **kwargs)
+
 
 class Repo(object):
     MAX_VERSION = 0
@@ -240,6 +251,7 @@ class Repo(object):
             delta
         )
 
+        build_info.call_hook('post_build', build_info)
         return build_info
 
     def update_qcsrc_hashes(self):

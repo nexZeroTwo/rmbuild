@@ -107,18 +107,17 @@ def main(argv, defaults_overrides=None):
 
     with util.in_dir(args.path.resolve()):
         repo = build.Repo(args.path)
-        config.apply(args.config, repo, args.config_argv)
+        build_args, install_options = config.apply(args.config, repo, args.config_argv)
 
         if args.rebuild:
-            config.build_args['force_rebuild'] = True
+            build_args['force_rebuild'] = True
 
-        binfo = repo.build(**config.build_args)
-        config.call_hook('post_build', binfo)
+        binfo = repo.build(**build_args)
 
-        for path in config.install_options['dirs']:
+        for path in install_options['dirs']:
             binfo.install(path, link=False)
 
-        for path in config.install_options['linkdirs']:
+        for path in install_options['linkdirs']:
             binfo.install(path, link=True)
 
-        config.call_hook('post_install', binfo)
+        binfo.call_hook('post_install', binfo)
