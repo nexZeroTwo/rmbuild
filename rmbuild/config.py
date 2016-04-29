@@ -28,7 +28,7 @@ def apply(fpath, repo, argv):
     for hook in filter(lambda key: key.startswith('hook_') and callable(cfg[key]), cfg):
         hooks[hook[5:]] = cfg[hook]
 
-    for param in tuple(inspect.signature(build.BuildInfo).parameters.keys())[2:]:
+    for param in tuple(inspect.signature(build.BuildInfo).parameters.keys())[1:]:
         if param in cfg:
             build_args[param] = cfg[param]
 
