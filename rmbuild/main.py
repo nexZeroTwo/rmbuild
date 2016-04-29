@@ -22,13 +22,13 @@ def parse_args(argv):
         try:
             return util.directory(val).resolve()
         except errors.PathError as e:
-            raise argparse.ArgumentError(val, str(e))
+            raise argparse.ArgumentTypeError(e)
 
     def type_file(val):
         try:
             return util.file(val).resolve()
         except errors.PathError as e:
-            raise argparse.ArgumentError(val, str(e))
+            raise argparse.ArgumentTypeError(e)
 
     p.add_argument(
         '-p', '--path',
