@@ -1,5 +1,6 @@
 
 import zipfile
+import re
 
 from . import util
 
@@ -43,7 +44,7 @@ class Package(object):
         return filename not in (
             "compressdirs",
             "_md5sums",
-        )
+        ) and not re.match(r'^_pkginfo_.*\.txt$', filename)
 
     def files(self):
         for fpath in self.path.glob('**/*'):
