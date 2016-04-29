@@ -99,6 +99,8 @@ link_by_index = functools.partial(copy_by_index, link=True)
 
 
 def install(build_info, path, link=False):
+    log.info("Installing to %r (%s)", str(path), 'link' if link else 'copy')
+
     path = util.directory(path)
     remove_old_files(path)
     index = build_index(build_info.output_dir)

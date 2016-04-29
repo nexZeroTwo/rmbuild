@@ -54,6 +54,7 @@ class QCModule(object):
                     fpath.rename(fpath.with_name('%s%s' % (module_config.dat_final_name, fpath.suffix)))
 
         if use_cache:
+            self.log.info('Caching %s for reuse (%r)', module_config.dat_final_name, str(cache_dir))
             util.copy_tree(build_dir, cache_dir)
 
         return build_dir

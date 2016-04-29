@@ -157,6 +157,7 @@ class Package(object):
         self.log.info("Done")
 
         if use_cache:
+            self.log.info('Caching for reuse (%r)', str(cached_pkg))
             util.copy(build_info.output_dir / self.output_file_name, cached_pkg)
 
     def build(self, build_info):
