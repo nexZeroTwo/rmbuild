@@ -120,4 +120,4 @@ def main(argv, defaults_overrides=None):
         for path in install_options['linkdirs']:
             binfo.install(path, link=True)
 
-        binfo.call_hook('post_install', binfo)
+        binfo.call_hook('post_install')

@@ -150,12 +150,16 @@ class BuildInfo(object):
             pkg.name.startswith('o_')
         )) or pkg.name in self.extra_packages
 
-    def call_hook(self, hook, *args, **kwargs):
+    def call_hook(self, hook, **kwargs):
         if hook not in self.hooks:
             return
 
-        log.debug('Calling hook %r (args=%r, kwargs=%r)', hook, args, kwargs)
-        return self.hooks[hook](*args, log=util.logger(__name__, 'hook', hook), **kwargs)
+        log.debug('Calling hook %r (keywords=%r)', hook, kwargs)
+        return self.hooks[hook](
+            build_info=self,
+            log=util.logger(__name__, 'hook', hook),
+            **kwargs
+        )
 
 
 class Repo(object):
@@ -251,7 +255,7 @@ class Repo(object):
             delta
         )
 
-        build_info.call_hook('post_build', build_info)
+        build_info.call_hook('post_build')
         return build_info
 
     def update_qcsrc_hashes(self):
