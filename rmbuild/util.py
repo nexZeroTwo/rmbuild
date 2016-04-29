@@ -57,10 +57,15 @@ def temp_directory():
 
 @contextlib.contextmanager
 def in_dir(path):
+    def chdir(p):
+        p = str(p)
+        log.debug("Switching working directory: %r", p)
+        os.chdir(p)
+
     old = pathlib.Path.cwd()
-    os.chdir(str(path))
+    chdir(path)
     yield
-    os.chdir(str(old))
+    chdir(old)
 
 
 def read_in_chunks(fobj, chunksize=4096):

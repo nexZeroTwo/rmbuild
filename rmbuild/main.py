@@ -74,12 +74,13 @@ def main(argv):
 
     log.info('Using RocketMinsta repository %r', str(args.path))
 
-    repo = build.Repo(args.path)
-    config.apply(args.config, repo)
-    binfo = repo.build(**config.build_args)
+    with util.in_dir(args.path.resolve()):
+        repo = build.Repo(args.path)
+        config.apply(args.config, repo)
+        binfo = repo.build(**config.build_args)
 
-    for path in config.install_options['dirs']:
-        install.install(binfo, path, link=False)
+        for path in config.install_options['dirs']:
+            install.install(binfo, path, link=False)
 
-    for path in config.install_options['linkdirs']:
-        install.install(binfo, path, link=True)
+        for path in config.install_options['linkdirs']:
+            install.install(binfo, path, link=True)
