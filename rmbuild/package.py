@@ -130,7 +130,7 @@ class Package(object):
             cache_dir = util.make_directory(build_info.cache_dir / 'pkg')
             cached_pkg = cache_dir / self.output_file_name
 
-            if cached_pkg.exists():
+            if cached_pkg.exists() and not build_info.force_rebuild:
                 self.log.info('Using a cached version (%r)', str(cached_pkg))
                 util.copy(cached_pkg, build_info.output_dir)
                 return

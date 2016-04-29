@@ -27,6 +27,7 @@ class BuildInfo(object):
                     cache_dir=None,
                     cache_qc=True,
                     cache_pkg=True,
+                    force_rebuild=False,
                 ):
 
         self.__dict__.update(locals())

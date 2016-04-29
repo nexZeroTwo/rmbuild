@@ -33,7 +33,7 @@ class QCModule(object):
 
             cache_dir = build_info.cache_dir / 'qc' / module_config.dat_final_name / myhash
 
-            if cache_dir.is_dir():
+            if cache_dir.is_dir() and not build_info.force_rebuild:
                 self.log.info('Using a cached version for %s (%r)', module_config.dat_final_name, str(cache_dir))
                 util.copy_tree(cache_dir, build_dir)
                 return build_dir

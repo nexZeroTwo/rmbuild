@@ -16,7 +16,7 @@ def parse_args(argv, defaults_overrides=None):
     defaults = {
         'path': '.',
         'git': 'git',
-        'config': 'config.py'
+        'config': 'config.py',
     }
 
     if defaults_overrides is not None:
@@ -63,6 +63,13 @@ def parse_args(argv, defaults_overrides=None):
     )
 
     p.add_argument(
+        '-r', '--rebuild',
+        action='store_true',
+        help='Rebuild all packages and QC modules even if cached versions exist.\n'
+             'If caching is in use, the cached versions will be updated.'
+    )
+
+    p.add_argument(
         'config',
         nargs='?',
         default=defaults['config'],
@@ -86,6 +93,8 @@ def main(argv, defaults_overrides=None):
     with util.in_dir(args.path.resolve()):
         repo = build.Repo(args.path)
         config.apply(args.config, repo)
+        if args.rebuild:
+            config.build_args['force_rebuild'] = True
         binfo = repo.build(**config.build_args)
 
         for path in config.install_options['dirs']:
