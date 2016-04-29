@@ -147,7 +147,14 @@ class Package(object):
                 self.log.debug("Adding link: %s -> %s", rpath, linkpath)
                 info = zipfile.ZipInfo(str(self.path))
                 info.filename = rpath
-                info.external_attr |= 0o0120000 << 16   # symlink
+
+                # Make it a symlink
+                info.external_attr |= 0o0120000 << 16
+
+                # Another bit of undocumented magic to make symlinks work on windows
+                # The zipfile module sucks
+                info.create_system = 3
+
                 pk3.writestr(info, linkpath)
             else:
                 self.log.debug("Adding file: %s [%s]", rpath, str(fpath))
