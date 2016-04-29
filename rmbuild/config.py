@@ -11,10 +11,11 @@ install_options = {}
 hooks = {}
 
 
-def apply(fpath, repo):
+def apply(fpath, repo, argv):
     cfg = {
         'util': util,
         'repo': repo,
+        'argv': argv,
     }
 
     fpath = str(fpath)
