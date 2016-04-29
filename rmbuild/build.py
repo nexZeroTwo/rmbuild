@@ -1,12 +1,13 @@
 
 import datetime
 import shlex
+import functools
 
 from . import util
 from . import package
 from . import qcmodule
 from . import errors
-
+from . import install
 
 log = util.logger(__name__)
 
@@ -72,6 +73,8 @@ class BuildInfo(object):
 
         self.built_qc_modules = {}
         self.built_packages = []
+
+        self.install = functools.partial(install.install, self)
 
     def configure_qc_module(self, name, *args, **kwargs):
         if name in self.qc_module_config:

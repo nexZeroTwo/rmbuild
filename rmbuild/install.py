@@ -98,11 +98,18 @@ def copy_by_index(index, src, dst, link=False):
 link_by_index = functools.partial(copy_by_index, link=True)
 
 
-def install(build_info, path, link=False):
+def install(build_info, path, link=False, pathfilter=None):
+    if pathfilter is None:
+        pathfilter = lambda p: True
+    elif isinstance(pathfilter, str):
+        pathfilter = util.pathfilter_pattern(pathfilter)
+    elif not callable(pathfilter):
+        raise ValueError('pathfilter must be a string or callable, got %r' % pathfilter)
+
     log.info("Installing to %r (%s)", str(path), 'link' if link else 'copy')
 
     path = util.directory(path)
     remove_old_files(path)
-    index = build_index(build_info.output_dir)
+    index = list(filter(pathfilter, build_index(build_info.output_dir)))
     write_index(index, path)
     copy_by_index(index, build_info.output_dir, path, link=link)

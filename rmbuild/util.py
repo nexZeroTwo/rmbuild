@@ -112,6 +112,12 @@ def namefilter_qcmodule(name):
     return not name.endswith('.log') and name != 'rm_auto.qh'
 
 
+def pathfilter_pattern(pattern):
+    def patternfilter(path):
+        return path.match(pattern)
+    return patternfilter
+
+
 def logger(*name):
     return logging.getLogger('.'.join(name))
 
