@@ -15,6 +15,7 @@ log = util.logger(__name__)
 def parse_args(argv):
     p = argparse.ArgumentParser(
         prog=argv[0],
+        fromfile_prefix_chars='@',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
 
