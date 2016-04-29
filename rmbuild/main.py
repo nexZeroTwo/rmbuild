@@ -12,7 +12,16 @@ from . import errors
 log = util.logger(__name__)
 
 
-def parse_args(argv):
+def parse_args(argv, defaults_overrides=None):
+    defaults = {
+        'path': '.',
+        'git': 'git',
+        'config': 'config.py'
+    }
+
+    if defaults_overrides is not None:
+        defaults.update(defaults_overrides)
+
     p = argparse.ArgumentParser(
         prog=argv[0],
         fromfile_prefix_chars='@',
@@ -33,14 +42,14 @@ def parse_args(argv):
 
     p.add_argument(
         '-p', '--path',
-        default='.',
+        default=defaults['path'],
         type=type_dir,
         help="path to the RocketMinsta git repository (working tree)"
     )
 
     p.add_argument(
         '-g', '--git',
-        default='git',
+        default=defaults['git'],
         help="the git executable to use"
     )
 
@@ -56,7 +65,7 @@ def parse_args(argv):
     p.add_argument(
         'config',
         nargs='?',
-        default='config.py',
+        default=defaults['config'],
         type=type_file,
         help="path to the build configuration file"
     )
@@ -64,11 +73,11 @@ def parse_args(argv):
     return p.parse_args(args=argv[1:])
 
 
-def main(argv):
+def main(argv, defaults_overrides=None):
     if pathlib.Path(argv[0]).name == '__main__.py':
         argv[0] = 'rmbuild'
 
-    args = parse_args(argv)
+    args = parse_args(argv, defaults_overrides)
     logging.basicConfig(level=args.log_level)
     util.GIT_EXECUTABLE = args.git
 
