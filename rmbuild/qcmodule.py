@@ -15,6 +15,13 @@ class QCModule(object):
         self.path = util.directory(path)
         self.log = util.logger(__name__, name)
 
+        self.needs_auto_header = False
+        with (self.path / 'progs.src').open() as progsfile:
+            for line in progsfile:
+                if line.endswith('/rm_auto.qh'):
+                    self.needs_auto_header = True
+                    break
+
     def build(self, build_info, module_config):
         use_cache = bool(build_info.cache_dir and build_info.cache_qc)
         build_dir = util.make_directory(pathlib.Path.cwd() / 'qcc' / module_config.dat_final_name)

@@ -72,6 +72,7 @@ class BuildInfo(object):
 
         self.qcc_flags = qcc_flags
 
+        self.qc_defs = self.get_qc_defs()
         self.qc_module_config = {}
         self.configure_qc_modules()
 
@@ -94,7 +95,16 @@ class BuildInfo(object):
             module: [] for module in self.repo.qc_modules
         }
 
+        flags_configdefs = ['-DRM_NO_AUTO_HEADER'] + [
+            ('-D%s=%s' % (key, value)) if value else ('-D%s' % key)
+                for key, value in self.qc_defs.items()
+        ]
+
         flags_autocvars = ['-DRM_AUTOCVARS']
+
+        for name, module in self.repo.qc_modules.items():
+            if not module.needs_auto_header:
+                extraflags[name] += flags_configdefs
 
         if self.autocvars == 'enable':
             for module in self.repo.qc_modules:
@@ -105,7 +115,7 @@ class BuildInfo(object):
             self.configure_qc_module(
                 'client',
                 qcc_cmd=self.qcc_cmd,
-                qcc_flags=self.qcc_flags + flags_autocvars,
+                qcc_flags=self.qcc_flags + flags_autocvars + extraflags['client'],
                 dat_expected_name='csprogs',
                 dat_final_name='rocketminsta_cl_autocvars',
                 cvar='csqc_progname_alt',
@@ -160,6 +170,21 @@ class BuildInfo(object):
             log=util.logger(__name__, 'hook', hook),
             **kwargs
         )
+
+    def get_qc_defs(self):
+        defs = {
+            'RM_BUILD_DATE': '"%s (%s)"' % (self.date_string, self.comment),
+            'RM_BUILD_NAME': '"%s"' % (self.name),
+            'RM_BUILD_VERSION': '"%s"' % self.version,
+            'RM_BUILD_MENUSUM': '"%s"' % self.repo.qchash_menu.hexdigest(),
+            'RM_BUILD_SUFFIX': '"%s"' % self.suffix,
+        }
+
+        for name, pkg in self.repo.packages.items():
+            if self.should_build_package(pkg):
+                defs['RM_SUPPORT_PKG_%s' % name] = None
+
+        return defs
 
 
 class Repo(object):
@@ -221,14 +246,21 @@ class Repo(object):
             self.qc_modules[name] = qcmodule.QCModule(name, self.qcsrc / name)
 
     def build(self, *buildinfo_args, **buildinfo_kwargs):
+        self.update_qcsrc_hashes()
         build_info = BuildInfo(self, *buildinfo_args, **buildinfo_kwargs)
         log.info("Build started: %s %s (%s)", build_info.name, self.rm_version, build_info.comment)
 
         util.clear_directory(build_info.output_dir)
 
+        auto_header_needed = False
+        for qc in self.qc_modules.values():
+            if qc.needs_auto_header:
+                auto_header_needed = True
+                break
+
         with util.in_dir(build_info.temp_dir):
-            self.update_qcsrc_hashes()
-            self.generate_qc_header(build_info)
+            if auto_header_needed:
+                self.generate_qc_header(build_info)
 
             w = util.Worker('AsyncBuilder', threads=build_info.threads)
             self.build_qc_modules_async(build_info, w)
@@ -276,23 +308,11 @@ class Repo(object):
         log.info("Generating the rm_auto header")
 
         with open(str(self.qcsrc / 'common' / 'rm_auto.qh'), 'w') as header:
-            header.write('\n'.join((
-                '#define RM_BUILD_DATE "%(date)s (%(comment)s)"',
-                '#define RM_BUILD_NAME "%(name)s"',
-                '#define RM_BUILD_VERSION "%(version)s"',
-                '#define RM_BUILD_MENUSUM "%(menusum)s"',
-                '#define RM_BUILD_SUFFIX "%(suffix)s"'
-            )) % {
-                'date': build_info.date_string,
-                'comment': build_info.comment,
-                'name': build_info.name,
-                'version': build_info.version,
-                'menusum': self.qchash_menu.hexdigest(),
-                'suffix': build_info.suffix,
-            } + '\n')
-
-            for pkg in self.packages:
-                header.write('#define RM_SUPPORT_PKG_%s\n' % pkg)
+            for key, value in build_info.qc_defs.items():
+                if value:
+                    header.write('#define %s %s\n' % (key, value))
+                else:
+                    header.write('#define %s\n' % key)
 
     def build_packages_async(self, build_info, worker):
         for name, pkg in self.packages.items():

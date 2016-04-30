@@ -125,6 +125,9 @@ def logger(*name):
 def logged_subprocess(popenargs, logger, log_level=logging.INFO, **kwargs):
     logger.debug("Invoking subprocess: %r", popenargs)
 
+    if 'cwd' in kwargs:
+        logger.debug("cwd = %r", kwargs['cwd'])
+
     child = subprocess.Popen(
         popenargs,
         stdout=subprocess.PIPE,
