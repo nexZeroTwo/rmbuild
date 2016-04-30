@@ -38,8 +38,6 @@ class QCModule(object):
                 util.copy_tree(cache_dir, build_dir)
                 return build_dir
 
-            cache_dir = util.make_directory(cache_dir)
-
         self.log.info('Building %s from %r', module_config.dat_final_name, str(self.path))
 
         util.logged_subprocess(
@@ -54,6 +52,7 @@ class QCModule(object):
                     fpath.rename(fpath.with_name('%s%s' % (module_config.dat_final_name, fpath.suffix)))
 
         if use_cache:
+            cache_dir = util.make_directory(cache_dir)
             self.log.info('Caching %s for reuse (%r)', module_config.dat_final_name, str(cache_dir))
             util.copy_tree(build_dir, cache_dir)
 
