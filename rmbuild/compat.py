@@ -12,7 +12,7 @@ except AttributeError:
         try:
             return tuple(inspect.getargspec(func).args)
         except TypeError:
-            # maybe we're trying to examine a class constructor?
+            # maybe we're trying to examine a class initializer?
             return get_parameter_names(func.__init__)[1:]
 else:
     def get_parameter_names(func):
