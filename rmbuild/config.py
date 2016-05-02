@@ -1,5 +1,5 @@
 
-import inspect
+from .compat import *
 
 from . import build
 from . import util
@@ -23,7 +23,7 @@ def apply(fpath, repo, argv):
         code = compile(f.read(), fpath, 'exec')
         exec(code, cfg, cfg)
 
-    for param in tuple(inspect.signature(build.BuildInfo).parameters.keys())[1:]:
+    for param in get_parameter_names(build.BuildInfo)[1:]:
         if param in cfg:
             build_args[param] = cfg[param]
 

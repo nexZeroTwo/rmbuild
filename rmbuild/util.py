@@ -12,6 +12,7 @@ import shutil
 import threading
 import queue
 
+from .compat import *
 from .errors import *
 
 _temp_dirs = []

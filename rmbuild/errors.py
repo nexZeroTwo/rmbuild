@@ -1,4 +1,7 @@
 
+from .compat import *
+
+
 class RMBuildException(Exception):
     pass
 

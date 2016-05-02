@@ -1,6 +1,8 @@
 
 import pathlib
 
+from .compat import *
+
 from . import util
 
 

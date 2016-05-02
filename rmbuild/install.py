@@ -3,6 +3,8 @@ import pathlib
 import gzip
 import functools
 
+from .compat import *
+
 from . import util
 
 log = util.logger(__name__)
@@ -35,7 +37,7 @@ def write_index(index, path):
 
     with open_index(path, 'wb') as ifile:
         for p in index:
-            ifile.write(b'%s\n' % str(p).encode('utf-8'))
+            ifile.write(('%s\n' % str(p)).encode('utf-8'))
 
 
 def read_index(path):

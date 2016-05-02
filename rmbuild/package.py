@@ -2,9 +2,10 @@
 import zipfile
 import re
 
-from . import util
-
+from .compat import *
 from .errors import *
+
+from . import util
 
 
 class Package(object):

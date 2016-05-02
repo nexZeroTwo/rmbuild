@@ -3,6 +3,8 @@ import logging
 import argparse
 import pathlib
 
+from .compat import *
+
 from . import config
 from . import build
 from . import install

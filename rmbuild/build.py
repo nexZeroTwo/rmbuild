@@ -3,6 +3,8 @@ import datetime
 import shlex
 import functools
 
+from .compat import *
+
 from . import util
 from . import package
 from . import qcmodule
