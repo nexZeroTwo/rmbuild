@@ -7,7 +7,6 @@ from .compat import *
 
 from . import config
 from . import build
-from . import install
 from . import util
 from . import errors
 
