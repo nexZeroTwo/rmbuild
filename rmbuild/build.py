@@ -37,6 +37,8 @@ class BuildInfo(object):
         if hooks is None:
             hooks = {}
 
+        qcc_cmd = str(qcc_cmd)
+
         self.__dict__.update(locals())
 
         self.date = datetime.datetime.now()
