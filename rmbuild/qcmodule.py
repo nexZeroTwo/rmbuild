@@ -39,7 +39,7 @@ class QCModule(object):
             with path.open('rb') as qcfile:
                 for line in qcfile:
                     hash.update(line)
-                    match = include_re.match(line.decode('utf-8'))
+                    match = include_re.match(strip(line.decode('utf-8')))
                     if match:
                         includes.append(match.group(1))
 
@@ -47,7 +47,7 @@ class QCModule(object):
                 hash_qc_file((path.parent / inc).resolve())
 
         with progspath.open() as progsfile:
-            for line in filter(lambda l: l and not l.endswith('.dat'), map(lambda l: strip(l), progsfile)):
+            for line in filter(lambda l: l and not l.endswith('.dat'), map(strip, progsfile)):
                 hash_qc_file(util.file((progspath.parent / line).resolve()))
 
         return hash
