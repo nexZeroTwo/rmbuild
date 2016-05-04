@@ -41,4 +41,8 @@ def apply(fpath, repo, argv):
         'linkdirs': cfg.get('install_linkdirs', [])
     }
 
-    return build_args, install_options
+    misc_options = {
+        'hash_function': cfg.get('hash_function', util.HASH_FUNCTION)
+    }
+
+    return build_args, install_options, misc_options

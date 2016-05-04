@@ -108,7 +108,9 @@ def main(argv, defaults_overrides=None):
 
     with util.in_dir(args.path.resolve()):
         repo = build.Repo(args.path)
-        build_args, install_options = config.apply(args.config, repo, args.config_argv)
+        build_args, install_options, misc_options = config.apply(args.config, repo, args.config_argv)
+
+        util.HASH_FUNCTION = misc_options['hash_function']
 
         if args.rebuild:
             build_args['force_rebuild'] = True

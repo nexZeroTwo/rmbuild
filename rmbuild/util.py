@@ -17,11 +17,15 @@ from .errors import *
 
 _temp_dirs = []
 
-hash_constructor = hashlib.md5
 log = logging.getLogger(__name__)
 
 QC_INSTALL_FILEEXT = ('.dat', '.lno')
 GIT_EXECUTABLE = 'git'
+HASH_FUNCTION = 'sha1'
+
+
+def hash_constructor():
+    return hashlib.new(HASH_FUNCTION)
 
 
 @atexit.register
