@@ -197,7 +197,6 @@ class Repo(object):
         self.packages = {}
         self.qc_modules = {}
         self.root = path
-        self.qchash_common = None
         self.qchash_menu = None
 
     @property
@@ -294,17 +293,7 @@ class Repo(object):
 
     def update_qcsrc_hashes(self):
         log.info("Hashing the QC source files")
-
-        chash = util.hash_constructor()
-        util.hash_path(self.qcsrc / 'common', hashobject=chash, namefilter=util.namefilter_qcmodule)
-
-        mhash = chash.copy()
-        util.hash_path(self.qcsrc / 'menu', hashobject=mhash, namefilter=util.namefilter_qcmodule)
-
-        util.hash_path(self.qcsrc / 'warpzonelib', hashobject=chash, namefilter=util.namefilter_qcmodule)
-
-        self.qchash_common = chash
-        self.qchash_menu = mhash
+        self.qchash_menu = self.qc_modules['menu'].compute_hash(util.hash_constructor())
 
     def generate_qc_header(self, build_info):
         log.info("Generating the rm_auto header")

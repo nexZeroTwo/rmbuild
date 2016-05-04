@@ -1,5 +1,7 @@
 
 import pathlib
+import re
+import io
 
 from .compat import *
 
@@ -24,6 +26,32 @@ class QCModule(object):
                     self.needs_auto_header = True
                     break
 
+    def compute_hash(self, hash):
+        p = self.path
+        strip = lambda s: re.sub(r'\s*//.*|\s*$|^\s*', '', s)
+        progspath = p / 'progs.src'
+        include_re = re.compile(r'#include\s*[<"](.*?)[>"]')
+
+        def hash_qc_file(path):
+            includes = []
+            hash.update(str(path).encode('utf-8'))
+
+            with path.open('rb') as qcfile:
+                for line in qcfile:
+                    hash.update(line)
+                    match = include_re.match(line.decode('utf-8'))
+                    if match:
+                        includes.append(match.group(1))
+
+            for inc in filter(lambda i: i != 'rm_auto.qh', includes):
+                hash_qc_file((path.parent / inc).resolve())
+
+        with progspath.open() as progsfile:
+            for line in filter(lambda l: l and not l.endswith('.dat'), map(lambda l: strip(l), progsfile)):
+                hash_qc_file(util.file((progspath.parent / line).resolve()))
+
+        return hash
+
     def build(self, build_info, module_config):
         use_cache = bool(build_info.cache_dir and build_info.cache_qc)
         build_dir = util.make_directory(pathlib.Path.cwd() / 'qcc' / module_config.dat_final_name)
@@ -33,12 +61,11 @@ class QCModule(object):
                 myhash = build_info.repo.qchash_menu.hexdigest()
             else:
                 if self.name == 'client':
-                    basehash = build_info.repo.qchash_menu
+                    basehash = build_info.repo.qchash_menu.copy()
                 else:
-                    basehash = build_info.repo.qchash_common
+                    basehash = util.hash_constructor()
 
-                myhash = util.hash_path(self.path, hashobject=basehash.copy(), namefilter=util.namefilter_qcmodule)
-                myhash = myhash.hexdigest()
+                myhash = self.compute_hash(basehash).hexdigest()
 
             cache_dir = build_info.cache_dir / 'qc' / module_config.dat_final_name / myhash
 
