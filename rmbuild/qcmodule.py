@@ -1,7 +1,6 @@
 
 import pathlib
 import re
-import io
 
 from .compat import *
 
