@@ -3,6 +3,8 @@ import datetime
 import shlex
 import functools
 
+from concurrent import futures
+
 from .compat import *
 
 from . import util
@@ -22,7 +24,7 @@ class BuildInfo(object):
                     comment="custom build",
                     suffix=None,
                     autocvars='compatible',
-                    threads=8,
+                    threads=None,
                     extra_packages=(),
                     link_pk3dirs=False,
                     compress_gfx=True,
@@ -84,6 +86,11 @@ class BuildInfo(object):
         self.built_packages = []
 
         self.install = functools.partial(install.install, self)
+
+        self.failed = False
+        self.futures = []
+        self.tasks = {}
+        self.executor = futures.ThreadPoolExecutor(self.threads)
 
     def configure_qc_module(self, name, *args, **kwargs):
         if name in self.qc_module_config:
@@ -190,6 +197,48 @@ class BuildInfo(object):
 
         return defs
 
+    def abort_if_failed(self):
+        if self.failed:
+            raise errors.BuildStepAborted
+
+    def add_async_task(self, name, task):
+        log.debug("Added task for %s", name)
+
+        def wrapped_task():
+            result = task()
+            log.debug("Finished task for %s", name)
+            return result
+
+        subs = name.split('.')
+        lists = [self.futures, self.tasks.setdefault(name, [])] + [
+            self.tasks.setdefault('.'.join(subs[:i]), []) for i in range(1, len(subs))
+        ]
+
+        future = self.executor.submit(wrapped_task)
+
+        for lst in lists:
+            lst.append(future)
+
+    def finish_async_tasks(self):
+        done, not_done = futures.wait(self.futures, return_when=futures.FIRST_EXCEPTION)
+
+        if not_done:
+            self.failed = True
+            for future in not_done:
+                future.cancel()
+
+        for future in done:
+            future.result()
+
+        self.executor.shutdown()
+
+    def wait_for_tasks(self, *tasknames):
+        for taskname in tasknames:
+            log.debug("Waiting for %s", taskname)
+            for future in self.tasks[taskname]:
+                future.result()
+            log.debug("Done waiting for %s", taskname)
+
 
 class Repo(object):
     MAX_VERSION = 0
@@ -265,19 +314,12 @@ class Repo(object):
             if auto_header_needed:
                 self.generate_qc_header(build_info)
 
-            w = util.Worker('AsyncBuilder', threads=build_info.threads)
-            self.build_qc_modules_async(build_info, w)
-            self.build_packages_async(build_info, w)
-            w.start()
-            w.wait()
-
-            if w.errors:
-                raise errors.RMBuildError("Errors occured during asynchronous operations")
-
-            self.post_build_packages(build_info)
+            self.build_qc_modules(build_info)
+            self.build_packages(build_info)
             self.install_qc_modules(build_info)
             self.copy_static_files(build_info)
             self.update_rm_cfg(build_info)
+            build_info.finish_async_tasks()
 
         delta = datetime.datetime.now() - build_info.date
 
@@ -307,74 +349,73 @@ class Repo(object):
                 else:
                     header.write('#define %s\n' % key)
 
-    def build_packages_async(self, build_info, worker):
+    def build_packages(self, build_info):
         for name, pkg in self.packages.items():
             if not build_info.should_build_package(pkg):
                 continue
 
-            @worker.add_task
             def task(name=name, pkg=pkg, build_info=build_info):
                 log.debug('build() for %s', name)
                 pkg.build(build_info)
                 build_info.built_packages.append(pkg)
 
-    def post_build_packages(self, build_info):
-        log.info("Building special client-side packages")
+            build_info.add_async_task("pkg.%s" % name, task)
 
-        for name, pkg in self.packages.items():
-            if not build_info.should_build_package(pkg):
-                continue
-
-            log.debug('post_build() for %s', name)
-            pkg.post_build(build_info)
-
-    def build_qc_modules_async(self, build_info, worker):
+    def build_qc_modules(self, build_info):
         built = build_info.built_qc_modules
 
         for name, module in self.qc_modules.items():
             built[name] = []
             for config in build_info.qc_module_config[name]:
-
-                @worker.add_task
                 def task(name=name, built=built, module=module, build_info=build_info, config=config):
                     built[name].append(module.build(build_info, config))
+                build_info.add_async_task("qc.%s" % name, task)
 
     def install_qc_module(self, build_info, built_module):
         for fpath in filter(lambda p: p.suffix in util.QC_INSTALL_FILEEXT, built_module.iterdir()):
             util.copy(fpath, build_info.output_dir)
 
     def install_qc_modules(self, build_info):
-        log.info("Installing QC modules")
+        def task():
+            build_info.wait_for_tasks('qc')
+            log.info("Installing QC modules")
 
-        for name, dirs in build_info.built_qc_modules.items():
-            if not build_info.should_install_qc_module(name):
-                continue
+            for name, dirs in build_info.built_qc_modules.items():
+                if not build_info.should_install_qc_module(name):
+                    continue
 
-            for module in dirs:
-                self.install_qc_module(build_info, module)
+                for module in dirs:
+                    self.install_qc_module(build_info, module)
+        build_info.add_async_task('copyqc', task)
 
     def copy_static_files(self, build_info):
-        log.info("Copying static files")
-        util.copy_tree(self.modfiles, build_info.output_dir)
+        def task():
+            log.info("Copying static files")
+            util.copy_tree(self.modfiles, build_info.output_dir)
+        build_info.add_async_task('static', task)
 
     def update_rm_cfg(self, build_info):
-        log.info("Updating rocketminsta.cfg")
+        def task():
+            build_info.wait_for_tasks('static', 'pkg')
 
-        with (build_info.output_dir / 'rocketminsta.cfg').open('a') as rmcfg:
-            rmcfg.write('\n\n// The rest of this file was autogenerated by rmbuild\n\n')
-            rmcfg.write('rm_clearpkgs\n')
+            log.info("Updating rocketminsta.cfg")
 
-            for pkg in build_info.built_packages:
-                rmcfg.write('rm_putpackage %s\n' % pkg.metafile_name)
+            with (build_info.output_dir / 'rocketminsta.cfg').open('a') as rmcfg:
+                rmcfg.write('\n\n// The rest of this file was autogenerated by rmbuild\n\n')
+                rmcfg.write('rm_clearpkgs\n')
 
-            rmcfg.write('\n')
+                for pkg in build_info.built_packages:
+                    rmcfg.write('rm_putpackage %s\n' % pkg.metafile_name)
 
-            for name, cfgs in build_info.qc_module_config.items():
-                for cfg in cfgs:
-                    if cfg.cvar:
-                        rmcfg.write('set %s %s.dat\n' % (cfg.cvar, cfg.dat_final_name))
+                rmcfg.write('\n')
 
-            rmcfg.write('\n')
+                for name, cfgs in build_info.qc_module_config.items():
+                    for cfg in cfgs:
+                        if cfg.cvar:
+                            rmcfg.write('set %s %s.dat\n' % (cfg.cvar, cfg.dat_final_name))
+
+                rmcfg.write('\n')
+        build_info.add_async_task('rmcfg', task)
 
     def __repr__(self):
         return 'Repo(%r)' % str(self._root)

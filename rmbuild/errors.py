@@ -26,3 +26,8 @@ class PackageError(RMBuildError):
 
 class VersionError(RMBuildError):
     pass
+
+
+class BuildStepAborted(RMBuildException):
+    def __init__(self, message="Build step aborted because another one failed"):
+        super().__init__(message)

@@ -104,10 +104,12 @@ install_dirs = [util.expand('~/.nexuiz/data/')]
 #
 #   Use 1 for fully sequential builds.
 #
+#   If set to None, the amount of CPUs (cores) multiplied by 5 is used.
+#
 #   The value below is the default.
 #
 
-#threads = 8
+#threads = None
 
 
 #
@@ -118,7 +120,7 @@ install_dirs = [util.expand('~/.nexuiz/data/')]
 #   The value below is the default.
 #
 
-# comment = "custom build"
+#comment = "custom build"
 
 
 ################################################################################

@@ -110,6 +110,8 @@ class Package(object):
         tdir = util.make_directory(build_info.temp_dir / ('pkg_compresstga_' + self.name))
 
         for tga in tgalist:
+            build_info.abort_if_failed()
+
             rel = tga.relative_to(self.path).with_suffix('.jpg')
             abs = (tdir / rel)
             cmap[tga] = (abs, rel.as_posix())
@@ -120,7 +122,7 @@ class Package(object):
                 continue
 
             with abs.open('wb') as jpeg:
-                self.log.info('Converting %r to JPEG', str(tga))
+                self.log.debug('Converting %r to JPEG', str(tga))
                 Image.open(str(tga)).save(jpeg, format='JPEG', quality=build_info.compress_gfx_quality, optimize=True)
 
         return cmap
@@ -141,6 +143,8 @@ class Package(object):
         pk3 = self._create_pk3(build_info)
 
         for fpath, rpath in self.files():
+            build_info.abort_if_failed()
+
             if fpath in cmap:
                 fpath, rpath = cmap[fpath]
 
@@ -166,6 +170,7 @@ class Package(object):
         pk3.close()
         self.log.info("Done")
 
+        build_info.abort_if_failed()
         build_info.call_hook('post_build_pk3',
             package=self,
             pk3_path=build_info.output_dir / self.output_file_name
@@ -181,9 +186,6 @@ class Package(object):
         else:
             self._build(build_info)
 
-    def post_build(self, build_info):
-        pass
-
 
 class LateBuildingPackage(Package):
     @property
@@ -191,9 +193,6 @@ class LateBuildingPackage(Package):
         if self._hash is None:
             raise PackageError(self, "Tried to read hash too early")
         return self._hash
-
-    def build(self, build_info):
-        pass
 
 
 class QCPackage(LateBuildingPackage):
@@ -212,14 +211,16 @@ class CSQCPackage(QCPackage):
 
         return h
 
-    def post_build(self, build_info):
+    def build(self, build_info):
+        build_info.wait_for_tasks('qc.client')
         self._qc_modules = build_info.built_qc_modules['client']
         self._hash = self._compute_hash()
         self._build(build_info)
 
 
 class MenuPackage(QCPackage):
-    def post_build(self, build_info):
+    def build(self, build_info):
+        build_info.wait_for_tasks('qc.menu')
         self._qc_modules = build_info.built_qc_modules['menu']
         self._hash = build_info.repo.qchash_menu.copy()
         self._build(build_info)

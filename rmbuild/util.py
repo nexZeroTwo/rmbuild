@@ -180,69 +180,6 @@ def clear_directory(path):
     assert not list(path.iterdir())
 
 
-def daemon(name, func, start=True):
-    thread = threading.Thread(target=func, name=name)
-    thread.daemon = True
-
-    if start:
-        thread.start()
-
-    return thread
-
-
-class Worker(object):
-    def __init__(self, name, threads=1, logger=log):
-        self.name = name
-        self.queue = queue.Queue()
-        if threads > 1:
-            self.threads = [daemon("%s:%i" % (name, i), self._func, start=False) for i in range(threads)]
-        else:
-            self.threads = [daemon(name, self._func, start=False)]
-        self.log = logger
-        self.started = False
-        self.errors = []
-
-    def start(self):
-        for thread in self.threads:
-            self._log("starting thread %r", thread)
-            thread.start()
-
-        self.started = True
-        return self
-
-    def wait(self):
-        if self.started:
-            for thread in self.threads:
-                thread.join()
-
-    def add_task(self, task):
-        self._log("add_task (%r)" % task)
-        r = self.queue.put(task)
-        return r
-
-    def _log(self, msg, *args):
-        return self.log.debug("Worker %s: " + msg, self.name, *args)
-
-    def _func(self):
-        q = self.queue
-        while True:
-            if self.errors:
-                break
-
-            try:
-                task = q.get(False)
-            except queue.Empty:
-                break
-
-            try:
-                task()
-            except Exception as e:
-                self.log.exception("Unhandled exception in a task for Worker %s", self.name)
-                self.errors.append(e)
-            q.task_done()
-        self._log("thread terminating")
-
-
 @contextlib.contextmanager
 def suppress_logged(log, *ex):
     if not ex:

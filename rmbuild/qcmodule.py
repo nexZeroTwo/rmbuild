@@ -26,10 +26,12 @@ class QCModule(object):
                     break
 
     def compute_hash(self, hash):
-        p = self.path
-        strip = lambda s: re.sub(r'\s*//.*|\s*$|^\s*', '', s)
-        progspath = p / 'progs.src'
         include_re = re.compile(r'#include\s*[<"](.*?)[>"]')
+        strip_re = re.compile(r'\s*//.*|\s*$|^\s*')
+
+        p = self.path
+        strip = lambda s: strip_re.sub('', s)
+        progspath = p / 'progs.src'
 
         def hash_qc_file(path):
             includes = []
@@ -52,6 +54,7 @@ class QCModule(object):
         return hash
 
     def build(self, build_info, module_config):
+        build_info.abort_if_failed()
         use_cache = bool(build_info.cache_dir and build_info.cache_qc)
         build_dir = util.make_directory(pathlib.Path.cwd() / 'qcc' / module_config.dat_final_name)
 
@@ -75,6 +78,7 @@ class QCModule(object):
 
         self.log.info('Building %s from %r', module_config.dat_final_name, str(self.path))
 
+        build_info.abort_if_failed()
         util.logged_subprocess(
             [module_config.qcc_cmd, '-src', str(self.path)] + module_config.qcc_flags,
             self.log,
