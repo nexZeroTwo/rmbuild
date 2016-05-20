@@ -1,6 +1,7 @@
 
 import datetime
 import shlex
+import shutil
 import functools
 
 from concurrent import futures
@@ -34,6 +35,7 @@ class BuildInfo(object):
                     cache_pkg=True,
                     force_rebuild=False,
                     hooks=None,
+                    server_package='pk3',
                 ):
 
         if hooks is None:
@@ -319,6 +321,7 @@ class Repo(object):
             self.install_qc_modules(build_info)
             self.copy_static_files(build_info)
             self.update_rm_cfg(build_info)
+            self.create_server_package(build_info)
             build_info.finish_async_tasks()
 
         delta = datetime.datetime.now() - build_info.date
@@ -416,6 +419,58 @@ class Repo(object):
 
                 rmcfg.write('\n')
         build_info.add_async_task('rmcfg', task)
+
+    def create_server_package(self, build_info):
+        if build_info.server_package == 'none':
+            return
+
+        if build_info.server_package not in ('pk3', 'pk3dir'):
+            raise ValueError(build_info.server_package)
+
+        def task():
+            build_info.wait_for_tasks('static', 'qc', 'copyqc', 'rmcfg')
+            log.info("Creating the server-side package")
+
+            files = []
+            dirs = []
+
+            def add_files(path):
+                for p in path.iterdir():
+                    if p.suffix in ('.pk3', '.pk3dir'):
+                        continue
+
+                    if p.is_symlink():
+                        raise errors.PathError(p, "symbolic links are not supported here")
+
+                    if p.is_dir():
+                        dirs.append(p.relative_to(build_info.output_dir))
+                        add_files(p)
+                    else:
+                        files.append(p.relative_to(build_info.output_dir))
+
+            add_files(build_info.output_dir)
+            print(dirs)
+
+            pk3dir = util.make_directory(
+                build_info.output_dir / ('zzz-rm-server-%s.pk3dir' % build_info.version)
+            )
+
+            for d in dirs:
+                util.make_directory(pk3dir / d)
+
+            for f in files:
+                (build_info.output_dir / f).replace(pk3dir / f)
+
+            for d in sorted(dirs, reverse=True):
+                (build_info.output_dir / d).rmdir()
+
+            if build_info.server_package == 'pk3':
+                shutil.make_archive(str(pk3dir.with_suffix('')), 'zip', str(pk3dir),
+                                    logger=util.logger(__name__, 'srvpkg'))
+                pk3dir.with_suffix('.zip').rename(pk3dir.with_suffix('.pk3'))
+                shutil.rmtree(str(pk3dir))
+
+        build_info.add_async_task('srvpkg', task)
 
     def __repr__(self):
         return 'Repo(%r)' % str(self._root)
