@@ -9,8 +9,6 @@ import os
 import atexit
 import shutil
 # import distutils.dir_util
-import threading
-import queue
 
 from .compat import *
 from .errors import *
