@@ -30,6 +30,7 @@ class BuildInfo(object):
                     link_pk3dirs=False,
                     compress_gfx=True,
                     compress_gfx_quality=85,
+                    compress_gfx_all=True,
                     cache_dir=None,
                     cache_qc=True,
                     cache_pkg=True,

@@ -1,5 +1,7 @@
 
 import zipfile
+import pathlib
+import itertools
 import re
 
 from .compat import *
@@ -94,22 +96,45 @@ class Package(object):
 
         return compress_tga
 
+    def _may_compress_image(self, fpath):
+        blacklist = [
+            'gfx/loading.tga',
+            'gfx/iceland.tga',
+            'gfx/madoka-rune.tga',
+            'models/sprites/*',
+        ]
+
+        fpath = pathlib.PurePosixPath(fpath.relative_to(self.path).as_posix())
+
+        for pattern in blacklist:
+            if fpath.match(pattern):
+                return False
+
+        return True
+
     def _compress_tga(self, build_info):
         cmap = {}
+        extrafiles = []
 
         if not build_info.compress_gfx:
-            return cmap
+            return cmap, extrafiles
 
-        tgalist = self._read_compressdirs()
+        if build_info.compress_gfx_all:
+            tgalist = [fpath for fpath, rpath in self.files() if fpath.suffix.lower() == '.tga']
+        else:
+            tgalist = self._read_compressdirs()
 
         if not tgalist:
-            return cmap
+            return cmap, extrafiles
 
         from PIL import Image
 
         tdir = util.make_directory(build_info.temp_dir / ('pkg_compresstga_' + self.name))
 
         for tga in tgalist:
+            if not self._may_compress_image(tga):
+                continue
+
             build_info.abort_if_failed()
 
             rel = tga.relative_to(self.path).with_suffix('.jpg')
@@ -123,9 +148,24 @@ class Package(object):
 
             with abs.open('wb') as jpeg:
                 self.log.debug('Converting %r to JPEG', str(tga))
-                Image.open(str(tga)).save(jpeg, format='JPEG', quality=build_info.compress_gfx_quality, optimize=True)
 
-        return cmap
+                img = Image.open(str(tga))
+                img.save(jpeg, format='JPEG', quality=build_info.compress_gfx_quality, optimize=True)
+
+                if img.mode == 'RGBA':
+                    *rgb, alpha = img.split()
+                    colors = alpha.getcolors(1)
+
+                    if not colors or colors[0][1] < 255:
+                        alphajpeg = abs.with_name(tga.stem + "_alpha").with_suffix(abs.suffix)
+                        alphajpeg_rel = rel.with_name(tga.stem + "_alpha").with_suffix(abs.suffix)
+                        extrafiles.append((alphajpeg, alphajpeg_rel.as_posix()))
+
+                        self.log.debug('Image %r has a non-white alpha channel, saving it to %r', str(tga), str(alphajpeg))
+                        alpha.save(alphajpeg, format='JPEG', quality=build_info.compress_gfx_quality, optimize=True)
+
+
+        return cmap, extrafiles
 
     def _build(self, build_info):
         use_cache = bool(build_info.cache_dir and build_info.cache_pkg)
@@ -139,10 +179,10 @@ class Package(object):
                 util.copy(cached_pkg, build_info.output_dir)
                 return
 
-        cmap = self._compress_tga(build_info)
+        cmap, extrafiles = self._compress_tga(build_info)
         pk3 = self._create_pk3(build_info)
 
-        for fpath, rpath in self.files():
+        for fpath, rpath in itertools.chain(self.files(), extrafiles):
             build_info.abort_if_failed()
 
             if fpath in cmap:
