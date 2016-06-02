@@ -99,7 +99,6 @@ class Package(object):
 
     def _may_compress_image(self, fpath):
         blacklist = [
-            'gfx/loading.tga',
             'gfx/iceland.tga',
             'gfx/madoka-rune.tga',
             'models/sprites/*',
