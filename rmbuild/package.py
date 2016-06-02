@@ -101,7 +101,6 @@ class Package(object):
         blacklist = [
             'gfx/iceland.tga',
             'gfx/madoka-rune.tga',
-            'models/sprites/*',
         ]
 
         fpath = pathlib.PurePosixPath(fpath.relative_to(self.path).as_posix())
