@@ -30,6 +30,7 @@ class Package(object):
         if self._hash is not None:
             return self._hash
         self._hash = util.hash_path(self.path, namefilter=self.filter_filename)
+        self._hash.update(util.HASH_PKG_APPEND_BYTES)
         return self._hash
 
     @property

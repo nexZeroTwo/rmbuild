@@ -20,6 +20,7 @@ log = logging.getLogger(__name__)
 QC_INSTALL_FILEEXT = ('.dat', '.lno')
 GIT_EXECUTABLE = 'git'
 HASH_FUNCTION = 'sha1'
+HASH_PKG_APPEND_BYTES = b'honk'
 
 
 def hash_constructor():
