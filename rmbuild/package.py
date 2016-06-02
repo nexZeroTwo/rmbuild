@@ -186,6 +186,12 @@ class Package(object):
             build_info.abort_if_failed()
 
             if fpath in cmap:
+                self.log.debug("Adding empty placeholder for %r", rpath)
+                info = zipfile.ZipInfo(str(self.path))
+                info.filename = rpath
+                info.external_attr = 0o644 << 16    # -r-wr--r-- permissions
+                pk3.writestr(info, "")
+
                 fpath, rpath = cmap[fpath]
 
             if fpath.is_symlink():
