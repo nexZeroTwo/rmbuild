@@ -450,7 +450,6 @@ class Repo(object):
                         files.append(p.relative_to(build_info.output_dir))
 
             add_files(build_info.output_dir)
-            print(dirs)
 
             pk3dir = util.make_directory(
                 build_info.output_dir / ('zzz-rm-server-%s.pk3dir' % build_info.version)
