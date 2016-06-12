@@ -76,7 +76,7 @@ install_dirs = [util.expand('~/.nexuiz/data/')]
 #   By default, all pk3dirs present in the RM repo directory will be built
 #   into client-side packages (pk3s), except those prefixed with o_ or c_.
 #
-#   Here you can specify a list of additional o_ and c_ packages include.
+#   Here you can specify a list of additional o_ and c_ packages to include.
 #
 #   o_ stands for "optional", those are part of RM and are tracked by git.
 #   c_ stands for "custom", those are user-supplied and ignored by git.
