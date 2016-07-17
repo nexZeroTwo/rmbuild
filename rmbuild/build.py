@@ -287,7 +287,7 @@ class Repo(object):
 
         with util.in_dir(self.root):
             self.rm_branch = util.git('rev-parse', '--abbrev-ref', 'HEAD')
-            self.rm_version = util.git('describe', '--tags', '--long', '--dirty')
+            self.rm_version = util.git('describe', '--tags', '--dirty')
 
         self.init_packages()
         self.init_qc_modules()
