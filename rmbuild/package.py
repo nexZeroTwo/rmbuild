@@ -161,7 +161,7 @@ class Package(object):
                         extrafiles.append((alphajpeg, alphajpeg_rel.as_posix()))
 
                         self.log.debug('Image %r has a non-white alpha channel, saving it to %r', str(tga), str(alphajpeg))
-                        alpha.save(alphajpeg, format='JPEG', quality=build_info.compress_gfx_quality, optimize=True)
+                        alpha.save(str(alphajpeg), format='JPEG', quality=build_info.compress_gfx_quality, optimize=True)
 
 
         return cmap, extrafiles
