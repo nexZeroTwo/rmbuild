@@ -49,6 +49,11 @@ def file(path):
 
 
 def make_directory(path):
+    path = pathlib.Path(path)
+
+    if not path.is_dir():
+        log.debug('Creating directory %r', str(path))
+
     os.makedirs(str(path), exist_ok=True)
     return directory(path)
 
