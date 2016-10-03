@@ -12,6 +12,7 @@ from . import util
 
 class Package(object):
     OUTPUT_NAME_FORMAT = "zzz-rm-%(name)s-%(hash)s.pk3"
+    SRC_IMAGE_SUFFIXLIST = ['.tga', '.png']
 
     def __init__(self, name, path):
         self.name = name
@@ -92,7 +93,7 @@ class Package(object):
 
         for cdir in cdirs:
             for fpath in cdir.iterdir():
-                if fpath.is_file() and fpath.suffix == '.tga':
+                if fpath.is_file() and fpath.suffix in self.SRC_IMAGE_SUFFIXLIST:
                     compress_tga.append(fpath)
 
         return compress_tga
@@ -119,7 +120,7 @@ class Package(object):
             return cmap, extrafiles
 
         if build_info.compress_gfx_all:
-            tgalist = [fpath for fpath, rpath in self.files() if fpath.suffix.lower() == '.tga']
+            tgalist = [fpath for fpath, rpath in self.files() if fpath.suffix.lower() in self.SRC_IMAGE_SUFFIXLIST]
         else:
             tgalist = self._read_compressdirs()
 
