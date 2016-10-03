@@ -190,7 +190,7 @@ class Package(object):
 
                 for suffix in self.SRC_IMAGE_SUFFIXLIST:
                     info = zipfile.ZipInfo(str(self.path))
-                    info.filename = pathlib.PurePath(rpath).with_suffix(suffix)
+                    info.filename = str(pathlib.PurePath(rpath).with_suffix(suffix))
                     info.external_attr = 0o644 << 16    # -r-wr--r-- permissions
                     pk3.writestr(info, "")
 
