@@ -3,6 +3,7 @@ import datetime
 import shlex
 import shutil
 import functools
+import multiprocessing
 
 from concurrent import futures
 
@@ -41,6 +42,9 @@ class BuildInfo(object):
 
         if hooks is None:
             hooks = {}
+
+        if threads is None:
+            threads = multiprocessing.cpu_count() * 5
 
         qcc_cmd = str(qcc_cmd)
 
