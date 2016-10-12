@@ -142,27 +142,34 @@ class Package(object):
             cmap[tga] = (abs, rel.as_posix())
             util.make_directory(cmap[tga][0].parent)
 
+            img = Image.open(str(tga))
+            save_jpeg = lambda i, p: i.save(str(p), format='JPEG', quality=build_info.compress_gfx_quality, optimize=True)
+
             if tga.is_symlink():
-                abs.symlink_to(tga.resolve().relative_to(tga.parent).with_suffix('.jpg'))
-                continue
-
-            with abs.open('wb') as jpeg:
+                targ = tga.resolve().relative_to(tga.parent).with_suffix('.jpg')
+                self.log.debug('Adding symlink %r pointing to %r', str(abs), str(targ))
+                abs.symlink_to(targ)
+            else:
                 self.log.debug('Converting %r to JPEG', str(tga))
+                save_jpeg(img, abs)
 
-                img = Image.open(str(tga))
-                img.save(jpeg, format='JPEG', quality=build_info.compress_gfx_quality, optimize=True)
+            if img.mode == 'RGBA':
+                *rgb, alpha = img.split()
+                colors = alpha.getcolors(1)
 
-                if img.mode == 'RGBA':
-                    *rgb, alpha = img.split()
-                    colors = alpha.getcolors(1)
+                if not colors or colors[0][1] < 255:
+                    alphajpeg = abs.with_name(tga.stem + "_alpha").with_suffix(abs.suffix)
+                    alphajpeg_rel = rel.with_name(tga.stem + "_alpha").with_suffix(abs.suffix)
+                    extrafiles.append((alphajpeg, alphajpeg_rel.as_posix()))
 
-                    if not colors or colors[0][1] < 255:
-                        alphajpeg = abs.with_name(tga.stem + "_alpha").with_suffix(abs.suffix)
-                        alphajpeg_rel = rel.with_name(tga.stem + "_alpha").with_suffix(abs.suffix)
-                        extrafiles.append((alphajpeg, alphajpeg_rel.as_posix()))
-
+                    if tga.is_symlink():
+                        srcname = tga.resolve().relative_to(tga.parent).with_suffix('')
+                        targ = srcname.with_name(srcname.stem + '_alpha').with_suffix('.jpg')
+                        self.log.debug('Symlink %r points to an image with a non-white alpha channel. Adding symlink %r pointing to %r', str(tga), str(alphajpeg), str(targ))
+                        alphajpeg.symlink_to(targ)
+                    else:
                         self.log.debug('Image %r has a non-white alpha channel, saving it to %r', str(tga), str(alphajpeg))
-                        alpha.save(str(alphajpeg), format='JPEG', quality=build_info.compress_gfx_quality, optimize=True)
+                        save_jpeg(alpha, alphajpeg)
 
 
         return cmap, extrafiles
