@@ -143,7 +143,7 @@ class Package(object):
             util.make_directory(cmap[tga][0].parent)
 
             img = Image.open(str(tga))
-            save_jpeg = lambda i, p: i.save(str(p), format='JPEG', quality=build_info.compress_gfx_quality, optimize=True)
+            save_jpeg = lambda i, p: i.convert('RGB').save(str(p), format='JPEG', quality=build_info.compress_gfx_quality, optimize=True)
 
             if tga.is_symlink():
                 targ = tga.resolve().relative_to(tga.parent).with_suffix('.jpg')
@@ -153,8 +153,8 @@ class Package(object):
                 self.log.debug('Converting %r to JPEG', str(tga))
                 save_jpeg(img, abs)
 
-            if img.mode == 'RGBA':
-                *rgb, alpha = img.split()
+            if img.mode in ('RGBA', 'LA'):
+                alpha = img.split()[-1]
                 colors = alpha.getcolors(1)
 
                 if not colors or colors[0][1] < 255:
