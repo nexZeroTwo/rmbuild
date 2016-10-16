@@ -158,8 +158,9 @@ class Package(object):
                 colors = alpha.getcolors(1)
 
                 if not colors or colors[0][1] < 255:
-                    alphajpeg = abs.with_name(tga.stem + "_alpha").with_suffix(abs.suffix)
-                    alphajpeg_rel = rel.with_name(tga.stem + "_alpha").with_suffix(abs.suffix)
+                    alphajpeg_basename = tga.stem + "_alpha" + abs.suffix
+                    alphajpeg = abs.with_name(alphajpeg_basename)
+                    alphajpeg_rel = rel.with_name(alphajpeg_basename)
                     extrafiles.append((alphajpeg, alphajpeg_rel.as_posix()))
 
                     if tga.is_symlink():
