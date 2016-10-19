@@ -71,17 +71,24 @@ install_dirs = [util.expand('~/.nexuiz/data/')]
 
 
 #
+#   extra_packages, excluded_packages
+#
+#   Here you can customize which client-side packages (pk3s) will be built
+#   for players to download. Each of them is represented with a .pk3dir
+#   directory in the RM repository. The naming conventions are as follows:
+#
+#   no prefix: Required package that can but should not be excluded.
+#   o_ prefix: Optional package that is built by default but can be excluded.
+#   e_ prefix: Extra package, like optional but isn't built by default.
+#              Must be enabled manually to be used.
+#   c_ prefix: Custom package, supplied by you.
+#              These are ignored by git and not built by default.
+#
+
+#
 #   extra_packages
 #
-#   By default, all pk3dirs present in the RM repo directory will be built
-#   into client-side packages (pk3s), except those prefixed with o_ or c_.
-#
-#   Here you can specify a list of additional o_ and c_ packages to include.
-#
-#   o_ stands for "optional", those are part of RM and are tracked by git.
-#   c_ stands for "custom", those are user-supplied and ignored by git.
-#
-#   Prefix your own packages with c_.
+#   List of packages to build in addition to the defaults (e_, c_ packages).
 #
 #   The value below is the default.
 #
@@ -89,10 +96,30 @@ install_dirs = [util.expand('~/.nexuiz/data/')]
 #extra_packages = []
 
 #
-#   Example: include the optional Ayumi package and some custom skins:
+#   Example: include the Ayumi package and your custom map previews:
 #
 
-#extra_packages = ['o_ayumi', 'c_mycoolskins']
+#extra_packages = ['e_ayumi', 'c_mapshots']
+
+#
+#   excluded_packages
+#
+#   List of default packages that you don't want to use.
+#
+#   Only put the o_ packages here.
+#   It's possible to exclude required (unprefixed) packages too, but this is
+#   highly discouraged and will result in half-broken builds.
+#
+#   The value below is the default.
+#
+
+#excluded_packages = []
+
+#
+#   Example: we want to use the Ayumi model, so let's disable rmnexus:
+#
+
+#excluded_packages = ['o_rmnexus']
 
 
 #

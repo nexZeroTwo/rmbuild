@@ -28,6 +28,7 @@ class BuildInfo(object):
                     autocvars='compatible',
                     threads=None,
                     extra_packages=(),
+                    excluded_packages=(),
                     link_pk3dirs=False,
                     compress_gfx=True,
                     compress_gfx_quality=85,
@@ -173,10 +174,33 @@ class BuildInfo(object):
         return name != 'menu'
 
     def should_build_package(self, pkg):
-        return (not (
-            pkg.name.startswith('c_') or
-            pkg.name.startswith('o_')
-        )) or pkg.name in self.extra_packages
+        if pkg.name in self.excluded_packages:
+            return False
+
+        if pkg.name in self.extra_packages:
+            return True
+
+        if self.repo.version > 3:
+            # New convention:
+            #   no prefix - required package - in git, built by default, can but should not be excluded
+            #   o_        - optional package - in git, built by default, safe to exclude
+            #   e_        - extra package    - in git, ignored by default
+            #   c_        - custom package   - user-supplied, ignored by default
+
+            return not (
+                pkg.name.startswith('e_') or
+                pkg.name.startswith('c_')
+            )
+        else:
+            # Old convention:
+            #   no prefix - required package - in git, built by default, can but should not be excluded
+            #   o_        - optional package - in git, ignored by default
+            #   c_        - custom package   - user-supplied, ignored by default
+
+            return not (
+                pkg.name.startswith('o_') or
+                pkg.name.startswith('c_')
+            )
 
     def call_hook(self, hook, **kwargs):
         if hook not in self.hooks:
@@ -248,7 +272,7 @@ class BuildInfo(object):
 
 
 class Repo(object):
-    MAX_VERSION = 3
+    MAX_VERSION = 4
 
     def __init__(self, path):
         self.version = 0
