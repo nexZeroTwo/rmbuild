@@ -293,8 +293,8 @@ class MenuPackage(QCPackage):
         self._build(build_info)
 
 
-def construct(*args, **kwargs):
+def construct(repo, name, *args, **kwargs):
     return {
         'csqc': CSQCPackage,
         'menu': MenuPackage,
-    }.get(args[0], Package)(*args, **kwargs)
+    }.get(name, Package)(repo, name, *args, **kwargs)
