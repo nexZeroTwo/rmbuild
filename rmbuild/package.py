@@ -147,9 +147,6 @@ class Package(object):
         tdir = util.make_directory(build_info.temp_dir / ('pkg_compresstga_' + self.name))
 
         for tga in tgalist:
-            if not self._may_compress_image(tga):
-                continue
-
             build_info.abort_if_failed()
 
             rel = tga.relative_to(self.path).with_suffix('.jpg')
