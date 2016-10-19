@@ -10,14 +10,61 @@ from .errors import *
 from . import util
 
 
+class Meta(object):
+    def __init__(self, pkg):
+        self.pkg = pkg
+
+    def get_images_to_convert(self, whitelisted_only):
+        if self.pkg.repo.version < 5:
+            if whitelisted_only:
+                return self._read_compressdirs()
+
+            blacklist = [
+                'gfx/iceland.tga',
+                'gfx/madoka-rune.tga',
+            ]
+        else:
+            # no whitelisting here
+            blacklist = list(filter(None, (self.pkg.path / '.rmbuild/jpeg_blacklist').read_text().split('\n')))
+
+        return [
+            fpath for fpath, rpath in self.pkg.files()
+                  if fpath.suffix.lower() in self.pkg.SRC_IMAGE_SUFFIXLIST and not any(map(fpath.match, blacklist))
+        ]
+
+    def _read_compressdirs(self):
+        compress_tga = []
+
+        try:
+            cdirs = map(lambda p: self.pkg.path / p, (self.pkg.path / 'compressdirs').read_text().strip().split('\n'))
+        except FileNotFoundError:
+            return compress_tga
+
+        for cdir in cdirs:
+            for fpath in cdir.iterdir():
+                if fpath.is_file() and fpath.suffix in self.pkg.SRC_IMAGE_SUFFIXLIST:
+                    compress_tga.append(fpath)
+
+        return compress_tga
+
+    @property
+    def serverside_dir(self):
+        try:
+            return util.directory(self.pkg.path / '.rmbuild/serverside')
+        except PathError:
+            return None
+
+
 class Package(object):
     OUTPUT_NAME_FORMAT = "zzz-rm-%(name)s-%(hash)s.pk3"
     SRC_IMAGE_SUFFIXLIST = ['.tga', '.png']
 
-    def __init__(self, name, path):
+    def __init__(self, repo, name, path):
+        self.repo = repo
         self.name = name
         self.path = util.directory(path)
         self._hash = None
+        self.meta = Meta(self)
         self.log = util.logger(__name__, name)
 
     def __repr__(self):
@@ -49,7 +96,7 @@ class Package(object):
         return filename not in (
             "compressdirs",
             "_md5sums",
-        ) and not re.match(r'^_pkginfo_.*\.txt$', filename)
+        ) and not re.match(r'^_pkginfo_.*\.txt$', filename) and not filename.startswith('.rmbuild')
 
     def files(self):
         for fpath in self.path.glob('**/*'):
@@ -83,35 +130,6 @@ class Package(object):
         info.external_attr = 0o644 << 16    # -r-wr--r-- permissions
         pk3.writestr(info, pkginfo)
 
-    def _read_compressdirs(self):
-        compress_tga = []
-
-        try:
-            cdirs = map(lambda p: self.path / p, (self.path / 'compressdirs').read_text().strip().split('\n'))
-        except FileNotFoundError:
-            return compress_tga
-
-        for cdir in cdirs:
-            for fpath in cdir.iterdir():
-                if fpath.is_file() and fpath.suffix in self.SRC_IMAGE_SUFFIXLIST:
-                    compress_tga.append(fpath)
-
-        return compress_tga
-
-    def _may_compress_image(self, fpath):
-        blacklist = [
-            'gfx/iceland.tga',
-            'gfx/madoka-rune.tga',
-        ]
-
-        fpath = pathlib.PurePosixPath(fpath.relative_to(self.path).as_posix())
-
-        for pattern in blacklist:
-            if fpath.match(pattern):
-                return False
-
-        return True
-
     def _compress_tga(self, build_info):
         cmap = {}
         extrafiles = []
@@ -119,10 +137,7 @@ class Package(object):
         if not build_info.compress_gfx:
             return cmap, extrafiles
 
-        if build_info.compress_gfx_all:
-            tgalist = [fpath for fpath, rpath in self.files() if fpath.suffix.lower() in self.SRC_IMAGE_SUFFIXLIST]
-        else:
-            tgalist = self._read_compressdirs()
+        tgalist = self.meta.get_images_to_convert(not build_info.compress_gfx_all)
 
         if not tgalist:
             return cmap, extrafiles
@@ -171,7 +186,6 @@ class Package(object):
                     else:
                         self.log.debug('Image %r has a non-white alpha channel, saving it to %r', str(tga), str(alphajpeg))
                         save_jpeg(alpha, alphajpeg)
-
 
         return cmap, extrafiles
 

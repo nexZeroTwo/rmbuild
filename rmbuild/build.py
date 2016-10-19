@@ -322,7 +322,7 @@ class Repo(object):
 
     def init_packages(self):
         for pdir in self.root.glob('*.pk3dir'):
-            self.packages[pdir.stem] = package.construct(pdir.stem, pdir)
+            self.packages[pdir.stem] = package.construct(self, pdir.stem, pdir)
 
     def init_qc_modules(self):
         for name in ('server', 'client', 'menu'):
@@ -424,6 +424,14 @@ class Repo(object):
         def task():
             log.info("Copying static files")
             util.copy_tree(self.modfiles, build_info.output_dir)
+
+            for name, pkg in self.packages.items():
+                if not build_info.should_build_package(pkg):
+                    continue
+
+                sdir = pkg.meta.serverside_dir
+                if sdir:
+                    util.copy_tree(sdir, build_info.output_dir)
         build_info.add_async_task('static', task)
 
     def update_rm_cfg(self, build_info):
