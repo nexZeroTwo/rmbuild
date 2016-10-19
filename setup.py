@@ -11,4 +11,5 @@ setup(
     author_email='akari@alienslab.net',
     license='WTFPL',
     packages=['rmbuild'],
+    install_requires=['pillow', 'pathlib']
 )
