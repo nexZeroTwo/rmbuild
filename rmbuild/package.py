@@ -25,7 +25,10 @@ class Meta(object):
             ]
         else:
             # no whitelisting here
-            blacklist = list(filter(None, (self.pkg.path / '.rmbuild/jpeg_blacklist').read_text().split('\n')))
+            try:
+                blacklist = list(filter(None, (self.pkg.path / '.rmbuild/jpeg_blacklist').read_text().split('\n')))
+            except FileNotFoundError:
+                blacklist = []
 
         return [
             fpath for fpath, rpath in self.pkg.files()
