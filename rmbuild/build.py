@@ -272,7 +272,7 @@ class BuildInfo(object):
 
 
 class Repo(object):
-    MAX_VERSION = 4
+    MAX_VERSION = 5
 
     def __init__(self, path):
         self.version = 0
